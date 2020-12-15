@@ -15,7 +15,7 @@ Adopting/adapting the DTU visualization provided by [DRIMSeq](http://bioconducto
 
 ![](vignettes/DRIMSeq_vis.png)
 
-Visualizing gene models. Note that this requires interaction with GRanges, which has not been implemented in iSEE yet.
+Visualizing gene models as provided in [ggbio](http://bioconductor.org/packages/release/bioc/html/ggbio.html). Note that this requires interaction with GRanges, which has not been implemented in iSEE yet.
 
 ![](vignettes/ggbio_vis.png)
 
