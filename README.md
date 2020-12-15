@@ -8,12 +8,15 @@ The idea is to have additional panels to supplement the established (gene-level)
 - The first obvious challenge is to come up with transcript-level visualization strategies that have an added value for end-users. Deciding on which plots are most relevant is a work in progress, but the following types have been put forward at the moment.
 
 Visualizing the raw usage of transcript, i.e. by generating a violin plot on the fraction of the expression of a target transcript and the expression of its corresponding gene: 
+
 ![](vignettes/raw_vis.png)
 
 Adopting/adapting the DTU visualization provided by [DRIMSeq](http://bioconductor.org/packages/release/bioc/html/DRIMSeq.html):
+
 ![](vignettes/DRIMSeq_vis.png)
 
 Visualizing gene models. Note that this requires interaction with GRanges, which has not been implemented in iSEE yet.
+
 ![](vignettes/ggbio_vis.png)
 
 - One of the main conceptual challenges will be to make the iSEEtranscripts project (and the iSEE project as a whole) as flexible as possible. Therefore, we should consider which input type is optimally suited to assure flexibility. For instance should we work with single (Ranged-)SummarizedExperiments where the transcript-level counts and gene-level counts are separate assays, or should we leverage `altExp` or `MultiAssayExperiment` to facilitate the visualization of multimodal data with iSEE.
