@@ -1,0 +1,139 @@
+---
+title: "iSEE into genes: transcripts!"
+date: "`r format(Sys.Date(), '%m/%d/%Y')`"
+author: "everyone"
+output:
+  rmarkdown::html_document:
+    highlight: pygments
+bibliography: library.bib
+vignette: |
+  %\VignetteIndexEntry{iSEE into genes: trancripts!}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, echo=FALSE, results="hide"}
+knitr::opts_chunk$set(tidy=FALSE, cache=FALSE, dev="png",
+                      message=FALSE, error=FALSE, warning=FALSE)
+```
+
+Quantification of data from @alasoo against GENCODE [@gencode] using
+Salmon [@salmon].
+
+```{r}
+library(macrophage)
+dir <- system.file("extdata", package="macrophage")
+coldata <- read.csv(file.path(dir, "coldata.csv"))
+coldata <- coldata[,c(1,2,3,5)]
+names(coldata) <- c("names","id","line","condition")
+coldata$files <- file.path(dir, "quants", coldata$names, "quant.sf.gz")
+all(file.exists(coldata$files))
+```
+
+```{r}
+suppressPackageStartupMessages(library(SummarizedExperiment))
+```
+
+```{r include=FALSE}
+# This hidden code chunk is only needed for Bioc build machines,
+# so that 'fishpond' will build regardless of whether
+# the machine can connect to ftp.ebi.ac.uk.
+# Using linkedTxomes to point to a GTF that lives in the macrophage pkg.
+# The chunk can be skipped if you have internet connection,
+# as tximeta will automatically ID the transcriptome and DL the GTF.
+library(tximeta)
+makeLinkedTxome(
+  indexDir=file.path(dir, "gencode.v29_salmon_0.12.0"),
+  source="Gencode",
+  organism="Homo sapiens",
+  release="29",
+  genome="GRCh38",
+  fasta="ftp://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_29/gencode.v29.transcripts.fa.gz",
+  gtf=file.path(dir, "gencode.v29.annotation.gtf.gz"), # local version
+  write=FALSE
+)
+```
+
+We load in the quantification data with `tximeta`:
+
+```{r}
+library(tximeta)
+library(dplyr)
+coldata <- coldata %>% filter(condition %in% c("naive","IFNg"))
+se <- tximeta(coldata, countsFromAbundance="scaledTPM", varReduce=TRUE)
+```
+
+```{r}
+se <- se[seqnames(se) == "chr1",]
+se$condition <- factor(se$condition, c("naive","IFNg"))
+```
+
+```{r}
+library(DRIMSeq)
+counts <- data.frame(gene_id=sapply(mcols(se)$gene_id, `[`, 1),
+                     feature_id=mcols(se)$tx_name,
+                     assays(se)[["counts"]])
+samples <- as.data.frame(colData(se))
+names(samples)[1] <- "sample_id"
+d <- dmDSdata(counts=counts, samples=samples)
+n <- 12
+n.small <- 6
+d <- dmFilter(d,
+              min_samps_feature_expr=n.small, min_feature_expr=10,
+              min_samps_feature_prop=n.small, min_feature_prop=0.1,
+              min_samps_gene_expr=n, min_gene_expr=10)
+d
+```
+
+```{r}
+library(DEXSeq)
+sample.data <- DRIMSeq::samples(d)
+count.data <- round(as.matrix(counts(d)[,-c(1:2)]))
+dxd <- DEXSeqDataSet(countData=count.data,
+                     sampleData=sample.data,
+                     design=~sample + exon + condition:exon,
+                     featureID=counts(d)$feature_id,
+                     groupID=counts(d)$gene_id)
+# this takes a little over a minute on my laptop
+system.time({
+  dxd <- estimateSizeFactors(dxd)
+  dxd <- estimateDispersions(dxd, quiet=TRUE)
+  dxd <- testForDEU(dxd, reducedModel=~sample + exon)
+})
+dxr <- DEXSeqResults(dxd, independentFiltering=FALSE)
+qval <- perGeneQValue(dxr)
+dxr.g <- data.frame(gene=names(qval),qval)
+columns <- c("featureID","groupID","pvalue")
+dxr2 <- as.data.frame(dxr[,columns])
+```
+
+```{r}
+library(pheatmap)
+pheatmap(log10(as.matrix(dxr[dxr$groupID == names(which.min(qval)),"countData"])+1),
+         cluster_rows=FALSE, cluster_cols=FALSE, show_rownames=FALSE, show_colnames=FALSE)
+```
+
+```{r}
+library(stageR)
+strp <- function(x) substr(x,1,15)
+pConfirmation <- matrix(dxr$pvalue,ncol=1)
+dimnames(pConfirmation) <- list(strp(dxr$featureID),"transcript")
+pScreen <- qval
+names(pScreen) <- strp(names(pScreen))
+tx2gene <- as.data.frame(dxr[,c("featureID", "groupID")])
+for (i in 1:2) tx2gene[,i] <- strp(tx2gene[,i])
+stageRObj <- stageRTx(pScreen=pScreen, pConfirmation=pConfirmation,
+                      pScreenAdjusted=TRUE, tx2gene=tx2gene)
+stageRObj <- stageWiseAdjustment(stageRObj, method="dtu", alpha=0.05)
+dex.padj <- getAdjustedPValues(stageRObj, order=FALSE,
+                               onlySignificantGenes=TRUE)
+head(dex.padj)
+```
+
+## Session information
+
+```{r}
+sessionInfo()
+```
+
+# References
