@@ -113,21 +113,221 @@ pheatmap(log10(as.matrix(dxr[dxr$groupID == names(which.min(qval)),"countData"])
          cluster_rows=FALSE, cluster_cols=FALSE, show_rownames=FALSE, show_colnames=FALSE)
 ```
 
+@Mike: I'm just curious, why did you choose to take a `substring` of the transcript names? I didn't do this because I feel its easier to have the same name format in the results as in the original `RangedSummarizedExperiment` object.
+
 ```{r}
 library(stageR)
-strp <- function(x) substr(x,1,15)
+#strp <- function(x) substr(x,1,15)
 pConfirmation <- matrix(dxr$pvalue,ncol=1)
-dimnames(pConfirmation) <- list(strp(dxr$featureID),"transcript")
+#dimnames(pConfirmation) <- list(strp(dxr$featureID),"transcript")
+dimnames(pConfirmation) <- list(dxr$featureID,"transcript")
 pScreen <- qval
-names(pScreen) <- strp(names(pScreen))
+#names(pScreen) <- strp(names(pScreen))
+names(pScreen) <- names(pScreen)
 tx2gene <- as.data.frame(dxr[,c("featureID", "groupID")])
-for (i in 1:2) tx2gene[,i] <- strp(tx2gene[,i])
+#for (i in 1:2) tx2gene[,i] <- strp(tx2gene[,i])
 stageRObj <- stageRTx(pScreen=pScreen, pConfirmation=pConfirmation,
                       pScreenAdjusted=TRUE, tx2gene=tx2gene)
 stageRObj <- stageWiseAdjustment(stageRObj, method="dtu", alpha=0.05)
-dex.padj <- getAdjustedPValues(stageRObj, order=FALSE,
-                               onlySignificantGenes=TRUE)
-head(dex.padj)
+dex.padj <- getAdjustedPValues(stageRObj, order=TRUE,
+                               onlySignificantGenes=FALSE)
+head(dex.padj, n=10)
+```
+
+# Visualization at the transcript level 
+
+ENST00000486652.5 is the most significant transcript of the most significant DTU gene (ENSG00000162923.15) that does not have a p-value of exactly 0, so I will demonstrate the visualizations with this transcript.
+We talked about having the test statistics available within the `RangedSummarizedExperiment` prior to calling iSEE.
+For now, I will just add the DEXSeq + stageR adjusted p-values to the rowData.
+
+```{r}
+se <- se[rownames(se) %in% dex.padj$txID,] # filter se based on DRIMSeq filtering? Do we want that as a general rule?
+rowData(se)[,c("gene_padj", "tx_padj")] <- dex.padj[match(rownames(se),dex.padj$txID),c("gene", "transcript")]
+```
+
+## Raw usages
+
+Compute proportions
+
+```{r}
+# Function based on DEXSeq's classes.R
+.getTotalCount <- function(countData, tx2gene) {
+    geneForEachTx <- as.character(tx2gene$gene_id[match(rownames(countData), tx2gene$tx_name)])
+    forCycle <- split(seq_len(nrow(countData)), as.character(geneForEachTx))
+    all <- lapply(forCycle, function(i) {
+        sct <- countData[i, , drop = FALSE]
+        rs <- t(vapply(seq_len(nrow(sct)), function(r) colSums(sct[, , drop = FALSE]), numeric(ncol(countData))))
+        # adapted, removed "-r" to get gene-level counts
+        rownames(rs) <- rownames(sct)
+        rs
+    })
+    totalCount <- do.call(rbind, all)
+    totalCount <- totalCount[rownames(countData), ]
+    return(totalCount)
+}
+
+tx2gene <- rowData(se)
+tx2gene$gene_id <- unlist(tx2gene$gene_id) ## not sure why previously put in a list?
+
+assays(se)$gene <- .getTotalCount(assays(se)$counts,tx2gene)
+assays(se)$proportions <- assays(se)$counts/assays(se)$gene
+```
+
+Sanity check
+
+```{r}
+head(assays(se)$counts["ENST00000486652.5",]) # sanity check for target transcript
+head(assays(se)$gene["ENST00000486652.5",]) # not a real gene-level matrix, could use gse <- summarizeToGene(se) for that if required for later visualizations. However, it is quite convenient to have the matrix in this format for the visualization function (see below)
+head(assays(se)$proportions["ENST00000486652.5",])
+```
+
+Raw usage visualization function (work in progress)
+For now, the input is the name of a transcript. Alternatively, it could also be the name of a gene, showing the usages of all its transcripts, either in 1 figure or in separate facets.
+
+```{r}
+library(ggplot2)
+
+plotUsages <- function(RSE, transcript, group, summaryStat){
+    stopifnot(is(RSE,"RangedSummarizedExperiment"))
+    stopifnot(transcript %in% rownames(assays(RSE)$proportions))
+    ## needs more checks, i.e. group must be linked to colData, transcript must be a character etc.
+    
+    txProp <- assays(se)$proportions
+    geneCounts <- assays(se)$gene
+    
+    data <- as.data.frame(cbind(t(txProp[transcript, , drop = FALSE]), 
+                                t(geneCounts[transcript, , drop = FALSE])))
+    data$group <- group
+    colnames(data) <- c("proportion", "geneCount", "group")
+    padj <- format(rowData(se)["ENST00000486652.5","tx_padj"], digits = 4)
+    
+    gg <- ggplot(data = data, aes(x = group, y = proportion, fill = group, width = geneCount)) +
+            geom_violin() +
+            geom_point(data = data, aes(x = group, y = proportion, size = geneCount), position = position_jitterdodge(jitter.width = 0.7, jitter.height = 0, dodge.width = 0.9)) +
+            scale_radius(name = "expression", range = c(0,5)) +
+            ylim(c(-0.05, 1.05)) +
+            ylab("Fraction of usage") +
+            theme_bw() +
+            labs(title = transcript, subtitle = paste0("padj = ", padj)) + 
+            theme(plot.title = element_text(size = 12, face = "bold"))
+    
+    if ("mean" %in% summaryStat) {
+        gg <- gg + stat_summary(fun = mean, geom = "point", position = position_dodge(width = 0.9), shape = 18, size = 4, colour = "gold2")
+    } # we could have other summary stats, like median or a weighted average, i.e. weighted on gene-level expression
+    
+    return(gg)
+}
+
+gg <- plotUsages(RSE = se, transcript = "ENST00000486652.5", group = colData(se)$condition, summaryStat = "mean")
+gg
+```
+
+## DRIMSeq proportions
+
+The `plotproportions` function only takes dmDSfit, dmDStest, dmSQTLfit or dmSQTLtest objects.
+In other words, we cannot run the `plotproportions` function out of the box without first calling
+the `dmPrecision` and `dmFit`, which is unnecessary and quite slow.
+
+As such, to leverage `plotproportions` I have started from the source code. 
+Its just to give you an idea of what DRIMSeq is doing. I here opted for the `barplot`, but in larger
+sample settings I guess we should move to violin/boxplots.
+
+```{r}
+library(reshape2)
+
+# DRIMSeq helper function
+colorb <- function(n){
+  clrs <- c("dodgerblue3", "maroon2",  "forestgreen", "darkorange1" ,
+    "blueviolet", "firebrick2", "deepskyblue",  "orchid2", "chartreuse3", 
+    "gold", "slateblue1", "tomato" , "blue", "magenta", "green3", "yellow", 
+    "purple3", "red" ,"darkslategray1", "lightpink1", "lightgreen", "khaki1", 
+    "plum3", "salmon")
+  nc <- length(clrs)
+  if(n > nc)
+    clrs <- rep(clrs, ceiling(n/nc))
+  clrs[1:n]
+}
+
+# Local copy (minor adaptations) of DRIMSeq's plotproportions function
+DRIMSeqPlotLocal <- function(RSE, group, gene, order_features = TRUE, order_samples = TRUE, group_colors = NULL, feature_colors = NULL){
+  
+    txCounts <- assays(se)$counts
+    proportions <- assays(se)$proportions
+    
+    ## subset to selected gene specified by user
+    tx2gene <- rowData(se)
+    tx2gene$gene_id <- unlist(tx2gene$gene_id)
+    
+    transcripts <- tx2gene[tx2gene$gene_id == gene,"tx_name"]
+    
+    txCounts <- txCounts[transcripts,]
+    proportions <- proportions[transcripts,]
+    
+    prop_samp <- data.frame(feature_id = rownames(proportions), proportions, 
+      stringsAsFactors = FALSE)
+    
+    ## Order transcipts by decreasing proportion (runs a few seconds)
+    if(order_features){
+        oo <- order(apply(aggregate(t(prop_samp[, -1]), 
+        by = list(group = group), median)[, -1], 2, max), decreasing = TRUE)
+        feature_levels <- rownames(prop_samp)[oo]  
+    }else{
+        feature_levels <- rownames(txCounts)
+    }
+    
+    ## Order samples by group
+    if(order_samples){
+        o <- order(group)
+        sample_levels <- colnames(txCounts)[o]
+    }else{
+        sample_levels <- colnames(txCounts)
+    }
+    
+    ## Melt prop_samp
+    prop_samp <- melt(prop_samp, id.vars = "feature_id", 
+        variable.name = "sample_id", value.name = "proportion", 
+        factorsAsStrings = FALSE)
+
+    prop_samp$feature_id <- factor(prop_samp$feature_id, levels = feature_levels)
+    prop_samp$group <- rep(group, each = nrow(txCounts))
+    prop_samp$sample_id <- factor(prop_samp$sample_id, levels = sample_levels)
+    
+    ## Prepare colors for groups
+    if(is.null(group_colors)){
+        group_colors <- colorb(nlevels(group))
+    }
+    names(group_colors) <- levels(group)
+
+    ## Prepare colors for features
+    if(is.null(feature_colors)){
+        feature_colors <- colorb(nrow(txCounts))
+    }
+    names(feature_colors) <- rownames(txCounts)
+
+    ggp <- ggplot() +
+        geom_bar(data = prop_samp, aes_string(x = "feature_id", y = "proportion", 
+        group = "sample_id", fill = "group"), 
+        stat = "identity", position = position_dodge(width = 0.9)) +
+        theme_bw() + 
+        theme(axis.text.x = element_text(angle = 90, vjust = 0.5), 
+        axis.text=element_text(size=16), 
+        axis.title = element_text(size=14, face="bold"), 
+        plot.title = element_text(size=16), 
+        legend.position = "right", 
+        legend.title = element_text(size = 14), 
+        legend.text = element_text(size = 14)) +
+        ggtitle(gene) +
+        scale_fill_manual(name = "Groups", values = group_colors, 
+        breaks = names(group_colors)) +
+        xlab("Features") +
+        ylab("Proportions")
+    # In this plot, we could add a summarystat and an indication of significance, i.e. a gene-level or transcript-level adjusted p-value 
+
+    return(ggp)
+}
+
+ggp <- DRIMSeqPlotLocal(RSE = se, group = colData(se)$condition, gene = "ENSG00000162923.15")
+ggp
 ```
 
 ## Session information
