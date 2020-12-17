@@ -113,19 +113,15 @@ pheatmap(log10(as.matrix(dxr[dxr$groupID == names(which.min(qval)),"countData"])
          cluster_rows=FALSE, cluster_cols=FALSE, show_rownames=FALSE, show_colnames=FALSE)
 ```
 
-@Mike: I'm just curious, why did you choose to take a `substring` of the transcript names? I didn't do this because I feel its easier to have the same name format in the results as in the original `RangedSummarizedExperiment` object.
+stageR for stagewise testing
 
 ```{r}
 library(stageR)
-#strp <- function(x) substr(x,1,15)
 pConfirmation <- matrix(dxr$pvalue,ncol=1)
-#dimnames(pConfirmation) <- list(strp(dxr$featureID),"transcript")
 dimnames(pConfirmation) <- list(dxr$featureID,"transcript")
 pScreen <- qval
-#names(pScreen) <- strp(names(pScreen))
 names(pScreen) <- names(pScreen)
 tx2gene <- as.data.frame(dxr[,c("featureID", "groupID")])
-#for (i in 1:2) tx2gene[,i] <- strp(tx2gene[,i])
 stageRObj <- stageRTx(pScreen=pScreen, pConfirmation=pConfirmation,
                       pScreenAdjusted=TRUE, tx2gene=tx2gene)
 stageRObj <- stageWiseAdjustment(stageRObj, method="dtu", alpha=0.05)
