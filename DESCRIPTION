@@ -11,14 +11,14 @@ Encoding: UTF-8
 LazyData: true
 VignetteBuilder: knitr
 Suggests:
+    SummarizedExperiment,
+    macrophage,
+    tximeta,
     DEXSeq,
     DRIMSeq,
-    SummarizedExperiment
-    dplyr
-    ggplot2
-    macrophage
-    pheatmap
-    reshape2
-    stageR
-    tximeta
+    dplyr,
+    reshape2,
+    ggplot2,
+    pheatmap,
+    stageR,
     knitr
