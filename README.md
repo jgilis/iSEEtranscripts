@@ -9,15 +9,15 @@ The idea is to have additional panels to supplement the established (gene-level)
 
 Visualizing the raw usage of transcript, i.e. by generating a violin plot on the fraction of the expression of a target transcript and the expression of its corresponding gene: 
 
-![](reference/figures/raw_vis.png)
+![](https://github.com/jgilis/iSEEtranscripts/raw/master/man/figures/raw_vis.png)
 
 Adopting/adapting the DTU visualization provided by [DRIMSeq](http://bioconductor.org/packages/release/bioc/html/DRIMSeq.html):
 
-![](reference/figures/DRIMSeq_vis.png)
+![](https://github.com/jgilis/iSEEtranscripts/raw/master/man/figures/DRIMSeq_vis.png)
 
 Visualizing gene models as provided in [ggbio](http://bioconductor.org/packages/release/bioc/html/ggbio.html). Note that this requires interaction with GRanges, which has not been implemented in iSEE yet.
 
-![](reference/figures/ggbio_vis.png)
+![](https://github.com/jgilis/iSEEtranscripts/raw/master/man/figures/ggbio_vis.png)
 
 - One of the main conceptual challenges will be to make the iSEEtranscripts project (and the iSEE project as a whole) as flexible as possible. Therefore, we should consider which input type is optimally suited to assure flexibility. For instance should we work with single (Ranged-)SummarizedExperiments where the transcript-level counts and gene-level counts are separate assays, or should we leverage `altExp` or `MultiAssayExperiment` to facilitate the visualization of multimodal data with iSEE.
 
