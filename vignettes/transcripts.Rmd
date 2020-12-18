@@ -130,9 +130,6 @@ dex.padj <- getAdjustedPValues(stageRObj, order=TRUE,
 head(dex.padj, n=10)
 ```
 
-# Visualization at the transcript level 
-
-ENST00000486652.5 is the most significant transcript of the most significant DTU gene (ENSG00000162923.15) that does not have a p-value of exactly 0, so I will demonstrate the visualizations with this transcript.
 We talked about having the test statistics available within the `RangedSummarizedExperiment` prior to calling iSEE.
 For now, I will just add the DEXSeq + stageR adjusted p-values to the rowData.
 
@@ -141,9 +138,11 @@ se <- se[rownames(se) %in% dex.padj$txID,] # filter se based on DRIMSeq filterin
 rowData(se)[,c("gene_padj", "tx_padj")] <- dex.padj[match(rownames(se),dex.padj$txID),c("gene", "transcript")]
 ```
 
-## Raw usages
+# Visualize raw usages
 
-Compute proportions
+ENST00000486652.5 is the most significant transcript of the most significant DTU gene (ENSG00000162923.15) that does not have a p-value of exactly 0, so I will demonstrate the visualizations with this transcript.
+
+## Compute proportions
 
 ```{r}
 # Function based on DEXSeq's classes.R
@@ -169,7 +168,7 @@ assays(se)$gene <- .getTotalCount(assays(se)$counts,tx2gene)
 assays(se)$proportions <- assays(se)$counts/assays(se)$gene
 ```
 
-Sanity check
+## Sanity check
 
 ```{r}
 head(assays(se)$counts["ENST00000486652.5",]) # sanity check for target transcript
@@ -177,7 +176,7 @@ head(assays(se)$gene["ENST00000486652.5",]) # not a real gene-level matrix, coul
 head(assays(se)$proportions["ENST00000486652.5",])
 ```
 
-Raw usage visualization function (work in progress)
+## By using ggplot
 For now, the input is the name of a transcript. Alternatively, it could also be the name of a gene, showing the usages of all its transcripts, either in 1 figure or in separate facets.
 
 ```{r}
@@ -218,7 +217,50 @@ gg <- plotUsages(RSE = se, transcript = "ENST00000486652.5", group = colData(se)
 gg
 ```
 
-## DRIMSeq proportions
+## By using iSEE FeatureAssayPlot
+
+```{r}
+# Two panels, one with expression values and one with usages
+app <- iSEE(se, initial=list(
+    FeatureAssayPlot(YAxisFeatureName="ENST00000486652.5", 
+             Assay="counts", 
+             XAxis= "Column data", 
+             XAxisColumnData = "condition", 
+             PanelWidth=6L),
+    FeatureAssayPlot(YAxisFeatureName="ENST00000486652.5", 
+             Assay="proportions", 
+             XAxis= "Column data", 
+             XAxisColumnData = "condition", 
+             PanelWidth=6L)
+))
+shiny::runApp(app)
+```
+
+This plot, however, is not sufficient; to improve it we might need to make our on class (inspired on / inheriting from FeatureAssayPlot)
+
+## By using the RawUsages class
+
+Under construction.
+I am currently trying to understand some of the iSEE source code and adapting it to my needs in RawUsage.R
+List of minor adaptations I made for RawUsage w.r.t. FeatureAssayPlot (to be expanded):
+    - Change name and color of panel
+    - Acts on assay "proportions" and nothing else --> does not require to specify  proportions as target assay in the iSEE call, is that the behavior we want?
+
+```{r}
+source(file="../R/RawUsage.R")
+```
+
+```{r}
+app <- iSEE(se, initial=list(
+    RawUsage(YAxisFeatureName="ENST00000486652.5",
+             XAxis= "Column data", 
+             XAxisColumnData = "condition")
+))
+shiny::runApp(app)
+```
+
+
+# Visualize DRIMSeq proportions
 
 The `plotproportions` function only takes dmDSfit, dmDStest, dmSQTLfit or dmSQTLtest objects.
 In other words, we cannot run the `plotproportions` function out of the box without first calling
