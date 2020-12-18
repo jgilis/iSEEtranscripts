@@ -1,4 +1,3 @@
-library(iSEE)
 .featAssayAssay <- "Assay"
 .featAssayXAxis <- "XAxis"
 .featAssayXAxisColData <- "XAxisColumnData"
