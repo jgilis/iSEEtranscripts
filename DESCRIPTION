@@ -26,5 +26,6 @@ Suggests:
     ggplot2,
     pheatmap,
     stageR,
+    iSEE,
     knitr,
     rmarkdown
