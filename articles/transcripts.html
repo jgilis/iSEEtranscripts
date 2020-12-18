@@ -69,7 +69,7 @@
       <h1 data-toc-skip>iSEE into genes: transcripts!</h1>
                         <h4 class="author">everyone</h4>
             
-            <h4 class="date">12/17/2020</h4>
+            <h4 class="date">12/18/2020</h4>
       
       
       <div class="hidden name"><code>transcripts.Rmd</code></div>
@@ -133,7 +133,7 @@
   <span class="va">dxd</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/DEXSeq/man/testForDEU.html">testForDEU</a></span><span class="op">(</span><span class="va">dxd</span>, reducedModel<span class="op">=</span><span class="op">~</span><span class="va">sample</span> <span class="op">+</span> <span class="va">exon</span><span class="op">)</span>
 <span class="op">}</span><span class="op">)</span></code></pre></div>
 <pre><code>##    user  system elapsed 
-##  14.009   1.509  12.673</code></pre>
+##  14.562   4.926  11.793</code></pre>
 <div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="va">dxr</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/DEXSeq/man/DEXSeqResults.html">DEXSeqResults</a></span><span class="op">(</span><span class="va">dxd</span>, independentFiltering<span class="op">=</span><span class="cn">FALSE</span><span class="op">)</span>
 <span class="va">qval</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/DEXSeq/man/perGeneQValue.html">perGeneQValue</a></span><span class="op">(</span><span class="va">dxr</span><span class="op">)</span>
@@ -162,25 +162,25 @@
 <pre><code>##                geneID              txID         gene   transcript
 ## 1   ENSG00000225492.6 ENST00000513638.5 0.000000e+00 0.000000e+00
 ## 2   ENSG00000225492.6 ENST00000394662.2 0.000000e+00 0.000000e+00
-## 3   ENSG00000228106.5 ENST00000442171.5 0.000000e+00 2.312905e-16
+## 3   ENSG00000228106.5 ENST00000442171.5 0.000000e+00 2.312812e-16
 ## 4   ENSG00000228106.5 ENST00000450784.5 0.000000e+00 1.000000e+00
 ## 5   ENSG00000228106.5 ENST00000441676.5 0.000000e+00 1.000000e+00
 ## 6   ENSG00000228106.5 ENST00000435378.5 0.000000e+00 1.000000e+00
 ## 7   ENSG00000228106.5 ENST00000457636.5 0.000000e+00 1.000000e+00
-## 8  ENSG00000162923.15 ENST00000486652.5 4.615723e-09 1.851594e-10
-## 9  ENSG00000162923.15 ENST00000414423.7 4.615723e-09 2.625860e-06
-## 10 ENSG00000162923.15 ENST00000443112.6 4.615723e-09 1.000000e+00</code></pre>
-<div id="visualization-at-the-transcript-level" class="section level1">
-<h1 class="hasAnchor">
-<a href="#visualization-at-the-transcript-level" class="anchor"></a>Visualization at the transcript level</h1>
-<p>ENST00000486652.5 is the most significant transcript of the most significant DTU gene (ENSG00000162923.15) that does not have a p-value of exactly 0, so I will demonstrate the visualizations with this transcript. We talked about having the test statistics available within the <code>RangedSummarizedExperiment</code> prior to calling iSEE. For now, I will just add the DEXSeq + stageR adjusted p-values to the rowData.</p>
+## 8  ENSG00000162923.15 ENST00000486652.5 4.616504e-09 1.851921e-10
+## 9  ENSG00000162923.15 ENST00000414423.7 4.616504e-09 2.626296e-06
+## 10 ENSG00000162923.15 ENST00000443112.6 4.616504e-09 1.000000e+00</code></pre>
+<p>We talked about having the test statistics available within the <code>RangedSummarizedExperiment</code> prior to calling iSEE. For now, I will just add the DEXSeq + stageR adjusted p-values to the rowData.</p>
 <div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="va">se</span> <span class="op">&lt;-</span> <span class="va">se</span><span class="op">[</span><span class="fu"><a href="https://rdrr.io/r/base/colnames.html">rownames</a></span><span class="op">(</span><span class="va">se</span><span class="op">)</span> <span class="op">%in%</span> <span class="va">dex.padj</span><span class="op">$</span><span class="va">txID</span>,<span class="op">]</span> <span class="co"># filter se based on DRIMSeq filtering? Do we want that as a general rule?</span>
 <span class="fu"><a href="https://rdrr.io/pkg/SummarizedExperiment/man/SummarizedExperiment-class.html">rowData</a></span><span class="op">(</span><span class="va">se</span><span class="op">)</span><span class="op">[</span>,<span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span><span class="op">(</span><span class="st">"gene_padj"</span>, <span class="st">"tx_padj"</span><span class="op">)</span><span class="op">]</span> <span class="op">&lt;-</span> <span class="va">dex.padj</span><span class="op">[</span><span class="fu"><a href="https://rdrr.io/r/base/match.html">match</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/colnames.html">rownames</a></span><span class="op">(</span><span class="va">se</span><span class="op">)</span>,<span class="va">dex.padj</span><span class="op">$</span><span class="va">txID</span><span class="op">)</span>,<span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span><span class="op">(</span><span class="st">"gene"</span>, <span class="st">"transcript"</span><span class="op">)</span><span class="op">]</span></code></pre></div>
-<div id="raw-usages" class="section level2">
+<div id="visualize-raw-usages" class="section level1">
+<h1 class="hasAnchor">
+<a href="#visualize-raw-usages" class="anchor"></a>Visualize raw usages</h1>
+<p>ENST00000486652.5 is the most significant transcript of the most significant DTU gene (ENSG00000162923.15) that does not have a p-value of exactly 0, so I will demonstrate the visualizations with this transcript.</p>
+<div id="compute-proportions" class="section level2">
 <h2 class="hasAnchor">
-<a href="#raw-usages" class="anchor"></a>Raw usages</h2>
-<p>Compute proportions</p>
+<a href="#compute-proportions" class="anchor"></a>Compute proportions</h2>
 <div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="co"># Function based on DEXSeq's classes.R</span>
 <span class="va">.getTotalCount</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="va">countData</span>, <span class="va">tx2gene</span><span class="op">)</span> <span class="op">{</span>
@@ -203,7 +203,10 @@
 
 <span class="fu"><a href="https://rdrr.io/pkg/SummarizedExperiment/man/SummarizedExperiment-class.html">assays</a></span><span class="op">(</span><span class="va">se</span><span class="op">)</span><span class="op">$</span><span class="va">gene</span> <span class="op">&lt;-</span> <span class="fu">.getTotalCount</span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/pkg/SummarizedExperiment/man/SummarizedExperiment-class.html">assays</a></span><span class="op">(</span><span class="va">se</span><span class="op">)</span><span class="op">$</span><span class="va">counts</span>,<span class="va">tx2gene</span><span class="op">)</span>
 <span class="fu"><a href="https://rdrr.io/pkg/SummarizedExperiment/man/SummarizedExperiment-class.html">assays</a></span><span class="op">(</span><span class="va">se</span><span class="op">)</span><span class="op">$</span><span class="va">proportions</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/SummarizedExperiment/man/SummarizedExperiment-class.html">assays</a></span><span class="op">(</span><span class="va">se</span><span class="op">)</span><span class="op">$</span><span class="va">counts</span><span class="op">/</span><span class="fu"><a href="https://rdrr.io/pkg/SummarizedExperiment/man/SummarizedExperiment-class.html">assays</a></span><span class="op">(</span><span class="va">se</span><span class="op">)</span><span class="op">$</span><span class="va">gene</span></code></pre></div>
-<p>Sanity check</p>
+</div>
+<div id="sanity-check" class="section level2">
+<h2 class="hasAnchor">
+<a href="#sanity-check" class="anchor"></a>Sanity check</h2>
 <div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="fu"><a href="https://rdrr.io/r/utils/head.html">head</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/pkg/SummarizedExperiment/man/SummarizedExperiment-class.html">assays</a></span><span class="op">(</span><span class="va">se</span><span class="op">)</span><span class="op">$</span><span class="va">counts</span><span class="op">[</span><span class="st">"ENST00000486652.5"</span>,<span class="op">]</span><span class="op">)</span> <span class="co"># sanity check for target transcript</span></code></pre></div>
 <pre><code>## SAMEA103885102 SAMEA103885347 SAMEA103885182 SAMEA103885136 SAMEA103885368 
@@ -222,7 +225,11 @@
 ##      0.2114202      0.3393544      0.1881279      0.2798234      0.1767497 
 ## SAMEA103885218 
 ##      0.3503511</code></pre>
-<p>Raw usage visualization function (work in progress) For now, the input is the name of a transcript. Alternatively, it could also be the name of a gene, showing the usages of all its transcripts, either in 1 figure or in separate facets.</p>
+</div>
+<div id="by-using-ggplot" class="section level2">
+<h2 class="hasAnchor">
+<a href="#by-using-ggplot" class="anchor"></a>By using ggplot</h2>
+<p>For now, the input is the name of a transcript. Alternatively, it could also be the name of a gene, showing the usages of all its transcripts, either in 1 figure or in separate facets.</p>
 <div class="sourceCode" id="cb22"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="kw"><a href="https://rdrr.io/r/base/library.html">library</a></span><span class="op">(</span><span class="va"><a href="http://ggplot2.tidyverse.org">ggplot2</a></span><span class="op">)</span>
 
@@ -261,9 +268,10 @@
 <span class="va">gg</span></code></pre></div>
 <p><img src="transcripts_files/figure-html/unnamed-chunk-13-1.png" width="700"></p>
 </div>
-<div id="drimseq-proportions" class="section level2">
-<h2 class="hasAnchor">
-<a href="#drimseq-proportions" class="anchor"></a>DRIMSeq proportions</h2>
+</div>
+<div id="visualize-drimseq-proportions" class="section level1">
+<h1 class="hasAnchor">
+<a href="#visualize-drimseq-proportions" class="anchor"></a>Visualize DRIMSeq proportions</h1>
 <p>The <code>plotproportions</code> function only takes dmDSfit, dmDStest, dmSQTLfit or dmSQTLtest objects. In other words, we cannot run the <code>plotproportions</code> function out of the box without first calling the <code>dmPrecision</code> and <code>dmFit</code>, which is unnecessary and quite slow.</p>
 <p>As such, to leverage <code>plotproportions</code> I have started from the source code. Its just to give you an idea of what DRIMSeq is doing. I here opted for the <code>barplot</code>, but in larger sample settings I guess we should move to violin/boxplots.</p>
 <div class="sourceCode" id="cb23"><pre class="downlit sourceCode r">
@@ -363,7 +371,6 @@
 <span class="va">ggp</span> <span class="op">&lt;-</span> <span class="fu">DRIMSeqPlotLocal</span><span class="op">(</span>RSE <span class="op">=</span> <span class="va">se</span>, group <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/pkg/SummarizedExperiment/man/SummarizedExperiment-class.html">colData</a></span><span class="op">(</span><span class="va">se</span><span class="op">)</span><span class="op">$</span><span class="va">condition</span>, gene <span class="op">=</span> <span class="st">"ENSG00000162923.15"</span><span class="op">)</span>
 <span class="va">ggp</span></code></pre></div>
 <p><img src="transcripts_files/figure-html/unnamed-chunk-14-1.png" width="700"></p>
-</div>
 <div id="session-information" class="section level2">
 <h2 class="hasAnchor">
 <a href="#session-information" class="anchor"></a>Session information</h2>
