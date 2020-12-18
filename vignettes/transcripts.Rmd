@@ -217,50 +217,6 @@ gg <- plotUsages(RSE = se, transcript = "ENST00000486652.5", group = colData(se)
 gg
 ```
 
-## By using iSEE FeatureAssayPlot
-
-```{r}
-library(iSEE)
-# Two panels, one with expression values and one with usages
-app <- iSEE(se, initial=list(
-    FeatureAssayPlot(YAxisFeatureName="ENST00000486652.5", 
-             Assay="counts", 
-             XAxis= "Column data", 
-             XAxisColumnData = "condition", 
-             PanelWidth=6L),
-    FeatureAssayPlot(YAxisFeatureName="ENST00000486652.5", 
-             Assay="proportions", 
-             XAxis= "Column data", 
-             XAxisColumnData = "condition", 
-             PanelWidth=6L)
-))
-shiny::runApp(app)
-```
-
-This plot, however, is not sufficient; to improve it we might need to make our on class (inspired on / inheriting from FeatureAssayPlot)
-
-## By using the RawUsages class
-
-Under construction.
-I am currently trying to understand some of the iSEE source code and adapting it to my needs in RawUsage.R
-List of minor adaptations I made for RawUsage w.r.t. FeatureAssayPlot (to be expanded):
-    - Change name and color of panel
-    - Acts on assay "proportions" and nothing else --> does not require to specify  proportions as target assay in the iSEE call, is that the behavior we want?
-
-```{r}
-source(file="../R/RawUsage.R")
-```
-
-```{r}
-app <- iSEE(se, initial=list(
-    RawUsage(YAxisFeatureName="ENST00000486652.5",
-             XAxis= "Column data", 
-             XAxisColumnData = "condition")
-))
-shiny::runApp(app)
-```
-
-
 # Visualize DRIMSeq proportions
 
 The `plotproportions` function only takes dmDSfit, dmDStest, dmSQTLfit or dmSQTLtest objects.
