@@ -220,6 +220,7 @@ gg
 ## By using iSEE FeatureAssayPlot
 
 ```{r}
+library(iSEE)
 # Two panels, one with expression values and one with usages
 app <- iSEE(se, initial=list(
     FeatureAssayPlot(YAxisFeatureName="ENST00000486652.5", 
