@@ -31,7 +31,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">iSEEtranscripts</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">0.1.1</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">0.1.2</span>
       </span>
     </div>
 
@@ -133,7 +133,7 @@
   <span class="va">dxd</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/DEXSeq/man/testForDEU.html">testForDEU</a></span><span class="op">(</span><span class="va">dxd</span>, reducedModel<span class="op">=</span><span class="op">~</span><span class="va">sample</span> <span class="op">+</span> <span class="va">exon</span><span class="op">)</span>
 <span class="op">}</span><span class="op">)</span></code></pre></div>
 <pre><code>##    user  system elapsed 
-##  14.562   4.926  11.793</code></pre>
+##  14.395   4.670  11.437</code></pre>
 <div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="va">dxr</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/DEXSeq/man/DEXSeqResults.html">DEXSeqResults</a></span><span class="op">(</span><span class="va">dxd</span>, independentFiltering<span class="op">=</span><span class="cn">FALSE</span><span class="op">)</span>
 <span class="va">qval</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/DEXSeq/man/perGeneQValue.html">perGeneQValue</a></span><span class="op">(</span><span class="va">dxr</span><span class="op">)</span>
@@ -492,7 +492,7 @@
 
 
       <footer><div class="copyright">
-  <p>Developed by Jeroen Gilis, Kevin Rue-Albrecht.</p>
+  <p>Developed by Jeroen Gilis, Kevin Rue-Albrecht, Michael Love.</p>
 </div>
 
 <div class="pkgdown">
