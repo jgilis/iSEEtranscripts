@@ -16,19 +16,19 @@ biocViews:
     Transcription, 
     GeneExpression,
     Transcriptomics
-Imports:
+RoxygenNote: 7.1.1
+Imports: 
+    iSEE,
     SummarizedExperiment,
     macrophage,
-    tximeta,
     DEXSeq,
     DRIMSeq,
     dplyr,
     reshape2,
     ggplot2,
     pheatmap,
-    iSEE,
-    stageR
-Suggests:
+    stageR,
+    tximeta
+Suggests: 
     knitr,
     rmarkdown
-RoxygenNote: 7.1.1
