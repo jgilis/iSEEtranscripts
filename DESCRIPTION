@@ -1,8 +1,11 @@
 Package: iSEEtranscripts
 Title: Unlocking iSEE for transcript-level visualization
-Version: 0.1.1
-Authors@R: c(person("Jeroen", "Gilis", role=c("aut", "cre"), email="Jeroen.Gilis@irc.UGent.be", comment = c(ORCID = '0000-0001-8415-0943')),
-    person("Kevin", "Rue-Albrecht", role = "aut", email = "kevinrue67@gmail.com", comment = c(ORCID = "0000-0003-3899-3872")))
+Version: 0.1.2
+Authors@R: c(
+    person("Jeroen", "Gilis", role=c("aut", "cre"), email="Jeroen.Gilis@irc.UGent.be", comment = c(ORCID = '0000-0001-8415-0943')),
+    person("Kevin", "Rue-Albrecht", role = "aut", email = "kevinrue67@gmail.com", comment = c(ORCID = "0000-0003-3899-3872")),
+    person("Michael", "Love", role = "aut", email = "michaelisaiahlove@gmail.com", comment = c(ORCID = "0000-0001-8401-0545"))
+    )
 Description: Unlocking iSEE for transcript-level visualization.
     More details coming soon in a package near you.
 License: GPL-2
