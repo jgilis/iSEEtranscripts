@@ -36,6 +36,10 @@ Therefore, we suggest the following workflow during the early stages of project;
 In order to make this a collaborative effort, we suggest forking the original iSEEtranscripts repository, working on a branch of your fork, and submitting a pull request when your contribution is ready for review.
 In addition, we will use the bioc slack channel [eurobioc2020-isee-transcripts](https://community-bioc.slack.com/archives/C01HBRDBGJV) for further communication and brainstorming.
 
+## Website
+
+Link to `pkgdown` website: http://jgilis.github.io/iSEEtranscripts/
+
 ## BiocChallenges
 
 This project is created in light of the [BiocChallenges](https://kevinrue.github.io/BiocChallenges/) project introduced at eurobioc2020.
