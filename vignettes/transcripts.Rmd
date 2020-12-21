@@ -21,6 +21,10 @@ Quantification of data from @alasoo against GENCODE [@gencode] using
 Salmon [@salmon].
 
 ```{r}
+library(iSEE)
+```
+
+```{r}
 library(macrophage)
 dir <- system.file("extdata", package="macrophage")
 coldata <- read.csv(file.path(dir, "coldata.csv"))
