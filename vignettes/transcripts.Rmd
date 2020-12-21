@@ -21,6 +21,10 @@ Quantification of data from @alasoo against GENCODE [@gencode] using
 Salmon [@salmon].
 
 ```{r}
+library(iSEE)
+```
+
+```{r}
 library(macrophage)
 dir <- system.file("extdata", package="macrophage")
 coldata <- read.csv(file.path(dir, "coldata.csv"))
@@ -177,7 +181,6 @@ head(assays(se)$proportions["ENST00000486652.5",])
 ```
 
 ## By using ggplot
-
 For now, the input is the name of a transcript. Alternatively, it could also be the name of a gene, showing the usages of all its transcripts, either in 1 figure or in separate facets.
 
 ```{r}
@@ -217,11 +220,6 @@ plotUsages <- function(RSE, transcript, group, summaryStat){
 gg <- plotUsages(RSE = se, transcript = "ENST00000486652.5", group = colData(se)$condition, summaryStat = "mean")
 gg
 ```
-
-```{r}
-library(iSEE)
-```
-
 
 # Visualize DRIMSeq proportions
 
