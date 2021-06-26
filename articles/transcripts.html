@@ -134,7 +134,7 @@
   <span class="va">dxd</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/DEXSeq/man/testForDEU.html" class="external-link">testForDEU</a></span><span class="op">(</span><span class="va">dxd</span>, reducedModel<span class="op">=</span><span class="op">~</span><span class="va">sample</span> <span class="op">+</span> <span class="va">exon</span><span class="op">)</span>
 <span class="op">}</span><span class="op">)</span></code></pre></div>
 <pre><code>##    user  system elapsed 
-##  21.625   5.511  18.195</code></pre>
+##  21.375   4.828  17.781</code></pre>
 <div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="va">dxr</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/DEXSeq/man/DEXSeqResults.html" class="external-link">DEXSeqResults</a></span><span class="op">(</span><span class="va">dxd</span>, independentFiltering<span class="op">=</span><span class="cn">FALSE</span><span class="op">)</span>
 <span class="va">qval</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/DEXSeq/man/perGeneQValue.html" class="external-link">perGeneQValue</a></span><span class="op">(</span><span class="va">dxr</span><span class="op">)</span>
@@ -225,6 +225,7 @@
                        PanelWidth<span class="op">=</span><span class="fl">6L</span><span class="op">)</span></code></pre></div>
 <div class="sourceCode" id="cb17"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="fu">shiny</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/shiny/man/runApp.html" class="external-link">runApp</a></span><span class="op">(</span><span class="va">app</span><span class="op">)</span></code></pre></div>
+<p><img src="https://github.com/jgilis/iSEEtranscripts/raw/master/man/figures/ProportionsPlot.png"></p>
 <div id="session-information" class="section level2">
 <h2 class="hasAnchor">
 <a href="#session-information" class="anchor" aria-hidden="true"></a>Session information</h2>
