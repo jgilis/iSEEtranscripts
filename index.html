@@ -20,6 +20,8 @@
 <![endif]-->
 </head>
 <body data-spy="scroll" data-target="#toc">
+    
+
     <div class="container template-home">
       <header><div class="navbar navbar-default navbar-fixed-top" role="navigation">
   <div class="container">
@@ -69,20 +71,20 @@
 
 <div id="goal" class="section level2">
 <h2 class="hasAnchor">
-<a href="#goal" class="anchor"></a>Goal</h2>
-<p>To unlock to the <a href="http://bioconductor.org/packages/release/bioc/html/iSEE.html">iSEE</a> bioconductor package for transcript-level visualization in the context single-cell omics experiments. The idea is to have additional panels to supplement the established (gene-level) visualizations of iSEE with relevant transcript-level plots. An end-user should be able to select a gene or transcript of interest and to readily obtain relevant information at the level of the individual isoforms.</p>
+<a href="#goal" class="anchor" aria-hidden="true"></a>Goal</h2>
+<p>To unlock to the <a href="http://bioconductor.org/packages/release/bioc/html/iSEE.html" class="external-link">iSEE</a> bioconductor package for transcript-level visualization in the context single-cell omics experiments. The idea is to have additional panels to supplement the established (gene-level) visualizations of iSEE with relevant transcript-level plots. An end-user should be able to select a gene or transcript of interest and to readily obtain relevant information at the level of the individual isoforms.</p>
 </div>
 <div id="specific-challenges" class="section level2">
 <h2 class="hasAnchor">
-<a href="#specific-challenges" class="anchor"></a>Specific challenges</h2>
+<a href="#specific-challenges" class="anchor" aria-hidden="true"></a>Specific challenges</h2>
 <ul>
 <li>The first obvious challenge is to come up with transcript-level visualization strategies that have an added value for end-users. Deciding on which plots are most relevant is a work in progress, but the following types have been put forward at the moment.</li>
 </ul>
 <p>Visualizing the raw usage of transcript, i.e. by generating a violin plot on the fraction of the expression of a target transcript and the expression of its corresponding gene:</p>
 <p><img src="https://github.com/jgilis/iSEEtranscripts/raw/master/man/figures/raw_vis.png"></p>
-<p>Adopting/adapting the DTU visualization provided by <a href="http://bioconductor.org/packages/release/bioc/html/DRIMSeq.html">DRIMSeq</a>:</p>
+<p>Adopting/adapting the DTU visualization provided by <a href="http://bioconductor.org/packages/release/bioc/html/DRIMSeq.html" class="external-link">DRIMSeq</a>:</p>
 <p><img src="https://github.com/jgilis/iSEEtranscripts/raw/master/man/figures/DRIMSeq_vis.png"></p>
-<p>Visualizing gene models as provided in <a href="http://bioconductor.org/packages/release/bioc/html/ggbio.html">ggbio</a>. Note that this requires interaction with GRanges, which has not been implemented in iSEE yet.</p>
+<p>Visualizing gene models as provided in <a href="http://bioconductor.org/packages/release/bioc/html/ggbio.html" class="external-link">ggbio</a>. Note that this requires interaction with GRanges, which has not been implemented in iSEE yet.</p>
 <p><img src="https://github.com/jgilis/iSEEtranscripts/raw/master/man/figures/ggbio_vis.png"></p>
 <ul>
 <li>One of the main conceptual challenges will be to make the iSEEtranscripts project (and the iSEE project as a whole) as flexible as possible. Therefore, we should consider which input type is optimally suited to assure flexibility. For instance should we work with single (Ranged-)SummarizedExperiments where the transcript-level counts and gene-level counts are separate assays, or should we leverage <code>altExp</code> or <code>MultiAssayExperiment</code> to facilitate the visualization of multimodal data with iSEE.</li>
@@ -90,38 +92,45 @@
 </div>
 <div id="structure" class="section level2">
 <h2 class="hasAnchor">
-<a href="#structure" class="anchor"></a>Structure</h2>
+<a href="#structure" class="anchor" aria-hidden="true"></a>Structure</h2>
 <p>This project should obviously be compatible with existing bioconductor concepts, including established data types and workflows. Therefore, we suggest the following workflow during the early stages of project;</p>
-<ol>
-<li>Work on a single reference dataset; <a href="https://bioconductor.org/packages/release/data/experiment/html/macrophage.html">macrophage</a>
+<ol style="list-style-type: decimal">
+<li>Work on a single reference dataset; <a href="https://bioconductor.org/packages/release/data/experiment/html/macrophage.html" class="external-link">macrophage</a>
 </li>
-<li>Import data using <a href="https://bioconductor.org/packages/release/bioc/html/tximport.html">tximport</a> and/or <a href="https://bioconductor.org/packages/release/bioc/html/tximeta.html">tximeta</a>.</li>
+<li>Import data using <a href="https://bioconductor.org/packages/release/bioc/html/tximport.html" class="external-link">tximport</a> and/or <a href="https://bioconductor.org/packages/release/bioc/html/tximeta.html" class="external-link">tximeta</a>.</li>
 <li>Wrangle data in the desired object type (see specific challenges)</li>
 <li>Explore different visualization strategies (see specific challenges)</li>
 </ol>
 </div>
+<div id="website" class="section level2">
+<h2 class="hasAnchor">
+<a href="#website" class="anchor" aria-hidden="true"></a>Website</h2>
+<p>Link to pkgdown website: <a href="https://jgilis.github.io/iSEEtranscripts/" class="external-link uri">https://jgilis.github.io/iSEEtranscripts/</a></p>
+</div>
 <div id="collaborate" class="section level2">
 <h2 class="hasAnchor">
-<a href="#collaborate" class="anchor"></a>Collaborate</h2>
-<p>In order to make this a collaborative effort, we suggest forking the original iSEEtranscripts repository, working on a branch of your fork, and submitting a pull request when your contribution is ready for review. In addition, we will use the bioc slack channel <a href="https://community-bioc.slack.com/archives/C01HBRDBGJV">eurobioc2020-isee-transcripts</a> for further communication and brainstorming.</p>
+<a href="#collaborate" class="anchor" aria-hidden="true"></a>Collaborate</h2>
+<p>In order to make this a collaborative effort, we suggest forking the original iSEEtranscripts repository, working on a branch of your fork, and submitting a pull request when your contribution is ready for review. In addition, we will use the bioc slack channel <a href="https://community-bioc.slack.com/archives/C01HBRDBGJV" class="external-link">eurobioc2020-isee-transcripts</a> for further communication and brainstorming.</p>
 </div>
 <div id="biocchallenges" class="section level2">
 <h2 class="hasAnchor">
-<a href="#biocchallenges" class="anchor"></a>BiocChallenges</h2>
-<p>This project is created in light of the <a href="https://kevinrue.github.io/BiocChallenges/">BiocChallenges</a> project introduced at eurobioc2020.</p>
+<a href="#biocchallenges" class="anchor" aria-hidden="true"></a>BiocChallenges</h2>
+<p>This project is created in light of the <a href="https://kevinrue.github.io/BiocChallenges/" class="external-link">BiocChallenges</a> project introduced at eurobioc2020.</p>
 </div>
 
   </div>
 
   <div class="col-md-3 hidden-xs hidden-sm" id="pkgdown-sidebar">
     <div class="license">
-<h2>License</h2>
+<h2 data-toc-skip>License</h2>
 <ul class="list-unstyled">
 <li><a href="https://www.r-project.org/Licenses/GPL-2">GPL-2</a></li>
 </ul>
 </div>
+
+
 <div class="developers">
-<h2>Developers</h2>
+<h2 data-toc-skip>Developers</h2>
 <ul class="list-unstyled">
 <li>Jeroen Gilis <br><small class="roles"> Author, maintainer </small> <a href="https://orcid.org/0000-0001-8415-0943" target="orcid.widget" aria-label="ORCID"><span class="fab fa-orcid orcid" aria-hidden="true"></span></a> </li>
 <li>Kevin Rue-Albrecht <br><small class="roles"> Author </small> <a href="https://orcid.org/0000-0003-3899-3872" target="orcid.widget" aria-label="ORCID"><span class="fab fa-orcid orcid" aria-hidden="true"></span></a> </li>
@@ -129,16 +138,20 @@
 </ul>
 </div>
 
+
+
   </div>
 </div>
 
 
       <footer><div class="copyright">
-  <p>Developed by Jeroen Gilis, Kevin Rue-Albrecht, Michael Love.</p>
+  <p></p>
+<p>Developed by Jeroen Gilis, Kevin Rue-Albrecht, Michael Love.</p>
 </div>
 
 <div class="pkgdown">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/">pkgdown</a> 1.6.1.9000.</p>
+  <p></p>
+<p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 1.6.1.9001.</p>
 </div>
 
       </footer>
@@ -146,6 +159,8 @@
 
   
 
+
+  
 
   </body>
 </html>
