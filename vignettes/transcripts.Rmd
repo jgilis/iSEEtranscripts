@@ -57,7 +57,6 @@ makeLinkedTxome(
 We load in the quantification data with `tximeta`:
 
 ```{r}
-library(tximeta)
 library(dplyr)
 coldata <- coldata %>% filter(condition %in% c("naive","IFNg"))
 se <- tximeta(coldata, countsFromAbundance="scaledTPM", varReduce=TRUE)
@@ -130,22 +129,21 @@ dex.padj <- getAdjustedPValues(stageRObj, order=TRUE,
 head(dex.padj, n=10)
 ```
 
-We talked about having the test statistics available within the `RangedSummarizedExperiment` prior to calling iSEE.
-For now, I will just add the DEXSeq + stageR adjusted p-values to the rowData.
+We talked about having the test statistics available within 
+the `RangedSummarizedExperiment` prior to calling iSEE. For now, I will just add
+the DEXSeq + stageR adjusted p-values to the rowData.
 
 ```{r}
 se <- se[rownames(se) %in% dex.padj$txID,] # filter se based on DRIMSeq filtering? Do we want that as a general rule?
 rowData(se)[,c("gene_padj", "tx_padj")] <- dex.padj[match(rownames(se),dex.padj$txID),c("gene", "transcript")]
 ```
 
-# Visualize raw usages
-
-ENST00000486652.5 is the most significant transcript of the most significant DTU gene (ENSG00000162923.15) that does not have a p-value of exactly 0, so I will demonstrate the visualizations with this transcript.
-
-## Compute proportions
+# Visualize raw usages as proportions
 
 ```{r}
-# Function based on DEXSeq's classes.R
+library(iSEE)
+
+# Helper to compute proportions (based on DEXSeq's classes.R)
 .getTotalCount <- function(countData, tx2gene) {
     geneForEachTx <- as.character(tx2gene$gene_id[match(rownames(countData), tx2gene$tx_name)])
     forCycle <- split(seq_len(nrow(countData)), as.character(geneForEachTx))
@@ -161,472 +159,38 @@ ENST00000486652.5 is the most significant transcript of the most significant DTU
     return(totalCount)
 }
 
-tx2gene <- rowData(se)
-tx2gene$gene_id <- unlist(tx2gene$gene_id) ## not sure why previously put in a list?
-
-assays(se)$gene <- .getTotalCount(assays(se)$counts,tx2gene)
-assays(se)$proportions <- assays(se)$counts/assays(se)$gene
-```
-
-## Sanity check
-
-```{r}
-head(assays(se)$counts["ENST00000486652.5",]) # sanity check for target transcript
-head(assays(se)$gene["ENST00000486652.5",]) # not a real gene-level matrix, could use gse <- summarizeToGene(se) for that if required for later visualizations. However, it is quite convenient to have the matrix in this format for the visualization function (see below)
-head(assays(se)$proportions["ENST00000486652.5",])
-```
-
-## By using ggplot
-For now, the input is the name of a transcript. Alternatively, it could also be the name of a gene, showing the usages of all its transcripts, either in 1 figure or in separate facets.
-
-```{r}
-library(ggplot2)
-
-plotUsages <- function(RSE, transcript, group, summaryStat){
-    stopifnot(is(RSE,"RangedSummarizedExperiment"))
-    stopifnot(transcript %in% rownames(assays(RSE)$proportions))
-    ## needs more checks, i.e. group must be linked to colData, transcript must be a character etc.
-    
-    txProp <- assays(se)$proportions
-    geneCounts <- assays(se)$gene
-    
-    data <- as.data.frame(cbind(t(txProp[transcript, , drop = FALSE]), 
-                                t(geneCounts[transcript, , drop = FALSE])))
-    data$group <- group
-    colnames(data) <- c("proportion", "geneCount", "group")
-    padj <- format(rowData(se)["ENST00000486652.5","tx_padj"], digits = 4)
-    
-    gg <- ggplot(data = data, aes(x = group, y = proportion, fill = group, width = geneCount)) +
-            geom_violin() +
-            geom_point(data = data, aes(x = group, y = proportion, size = geneCount), position = position_jitterdodge(jitter.width = 0.7, jitter.height = 0, dodge.width = 0.9)) +
-            scale_radius(name = "expression", range = c(0,5)) +
-            ylim(c(-0.05, 1.05)) +
-            ylab("Fraction of usage") +
-            theme_bw() +
-            labs(title = transcript, subtitle = paste0("padj = ", padj)) + 
-            theme(plot.title = element_text(size = 12, face = "bold"))
-    
-    if ("mean" %in% summaryStat) {
-        gg <- gg + stat_summary(fun = mean, geom = "point", position = position_dodge(width = 0.9), shape = 18, size = 4, colour = "gold2")
-    } # we could have other summary stats, like median or a weighted average, i.e. weighted on gene-level expression
-    
-    return(gg)
-}
-
-gg <- plotUsages(RSE = se, transcript = "ENST00000486652.5", group = colData(se)$condition, summaryStat = "mean")
-gg
-```
-
-## By using iSEE FeatureAssayPlot
-
-```{r}
-library(iSEE)
-# Two panels, one with expression values and one with usages
-app <- iSEE(se, initial=list(
-    FeatureAssayPlot(YAxisFeatureName="ENST00000486652.5", 
-             Assay="counts", 
-             XAxis= "Column data", 
-             XAxisColumnData = "condition", 
-             PanelWidth=6L),
-    FeatureAssayPlot(YAxisFeatureName="ENST00000486652.5", 
-             Assay="proportions", 
-             XAxis= "Column data", 
-             XAxisColumnData = "condition", 
-             PanelWidth=6L)
-))
-```
-
-```{r, eval = FALSE}
-shiny::runApp(app)
-```
-
-This plot, however, is not sufficient; to improve it we might need to make our on class (inspired on / inheriting from FeatureAssayPlot)
-
-## By using the RawUsages class
-
-Under construction.
-I am currently trying to understand some of the iSEE source code and adapting it to my needs in RawUsage.R
-List of minor adaptations I made for RawUsage w.r.t. FeatureAssayPlot (to be expanded):
-    - Change name and color of panel
-    - Acts on assay "proportions" and nothing else --> does not require to specify  proportions as target assay in the iSEE call, is that the behavior we want?
-
-```{r}
-#source(file="../R/RawUsage.R")
-```
-
-```{r}
-.featAssayAssay <- "Assay"
-.featAssayXAxis <- "XAxis"
-.featAssayXAxisColData <- "XAxisColumnData"
-
-.featAssayXAxisFeatName <- "XAxisFeatureName"
-.featAssayXAxisRowTable <- "XAxisFeatureSource"
-.featAssayXAxisFeatDynamic <- "XAxisFeatureDynamicSource"
-
-.featAssayYAxisFeatName <- "YAxisFeatureName"
-.featAssayYAxisRowTable <- "YAxisFeatureSource"
-.featAssayYAxisFeatDynamic <- "YAxisFeatureDynamicSource"
-
-collated <- character(0)
-collated[.featAssayAssay] <- "character"
-collated[.featAssayXAxis] <- "character"
-collated[.featAssayXAxisColData] <- "character"
-
-collated[.featAssayXAxisFeatName] <- "character"
-collated[.featAssayXAxisRowTable] <- "character"
-collated[.featAssayXAxisFeatDynamic] <- "logical"
-
-collated[.featAssayYAxisFeatName] <- "character"
-collated[.featAssayYAxisRowTable] <- "character"
-collated[.featAssayYAxisFeatDynamic] <- "logical"
-
-setClass("RawUsage", contains="ColumnDotPlot", slots=collated)
-
-####################################################
-
-RawUsage <- function(...) {
-  new("RawUsage", ...)
-}
-
-setMethod("initialize", "RawUsage", function(.Object, ...) {
-  args <- list(...)
-  args <- .emptyDefault(args, .featAssayAssay, NA_character_)
-  args <- .emptyDefault(args, .featAssayXAxis, .featAssayXAxisNothingTitle)
-  args <- .emptyDefault(args, .featAssayXAxisColData, NA_character_)
-
-  args <- .emptyDefault(args, .featAssayXAxisRowTable, iSEE:::.noSelection)
-  args <- .emptyDefault(args, .featAssayXAxisFeatName, NA_character_)
-  args <- .emptyDefault(args, .featAssayXAxisFeatDynamic, iSEEOptions$get("selection.dynamic.single"))
-
-  args <- .emptyDefault(args, .featAssayYAxisRowTable, iSEE:::.noSelection)
-  args <- .emptyDefault(args, .featAssayYAxisFeatName, NA_character_)
-  args <- .emptyDefault(args, .featAssayYAxisFeatDynamic, iSEEOptions$get("selection.dynamic.single"))
-
-  do.call(callNextMethod, c(list(.Object), args))
-})
-
-setMethod(".refineParameters", "RawUsage", function(x, se) {
-  x <- callNextMethod()
-  if (is.null(x)) {
-    return(NULL)
-  }
-
-  if (nrow(se)==0L) {
-    warning(sprintf("no rows available for plotting '%s'", class(x)[1]))
-    return(NULL)
-  }
-
-  all_assays <- .getCachedCommonInfo(se, "DotPlot")$valid.assay.names
-  if (length(all_assays)==0L) {
-    warning(sprintf("no valid 'assays' for plotting '%s'", class(x)[1]))
-    return(NULL)
-  }
-
-  all_assays <- c(intersect(iSEEOptions$get("assay"), all_assays), all_assays)
-  x <- .replaceMissingWithFirst(x, .featAssayAssay, all_assays)
-
-  for (field in c(.featAssayXAxisFeatName, .featAssayYAxisFeatName)) {
-    x <- .replaceMissingWithFirst(x, field, rownames(se))
-  }
-
-  column_covariates <- .getCachedCommonInfo(se, "ColumnDotPlot")$valid.colData.names
-  if (length(column_covariates)==0L) {
-    if (x[[.featAssayXAxis]] == .featAssayXAxisColDataTitle) {
-      x[[.featAssayXAxis]] <- .featAssayXAxisNothingTitle
-    }
-  } else {
-    x <- .replaceMissingWithFirst(x, .featAssayXAxisColData, column_covariates)
-  }
-
-  x
-})
-
-.featAssayXAxisNothingTitle <- "None"
-.featAssayXAxisColDataTitle <- "Column data"
-.featAssayXAxisFeatNameTitle <- "Feature name"
-
-S4Vectors::setValidity2("RawUsage", function(object) {
-  msg <- character(0)
-
-  msg <- .allowableChoiceError(msg, object, .featAssayXAxis,
-                               c(.featAssayXAxisNothingTitle, .featAssayXAxisColDataTitle, .featAssayXAxisFeatNameTitle))
-
-  msg <- .singleStringError(msg, object,
-                            c(.featAssayAssay, .featAssayXAxisColData, .featAssayXAxisRowTable,
-                              .featAssayXAxisFeatName, .featAssayYAxisRowTable, .featAssayYAxisFeatName))
-
-  if (length(msg)) {
-    return(msg)
-  }
-  TRUE
-})
-
-setMethod(".defineDataInterface", "RawUsage", function(x, se, select_info) {
-  panel_name <- .getEncodedName(x)
-  .input_FUN <- function(field) { paste0(panel_name, "_", field) }
-
-  all_assays <- .getCachedCommonInfo(se, "DotPlot")$valid.assay.names
-  column_covariates <- .getCachedCommonInfo(se, "ColumnDotPlot")$valid.colData.names
-  tab_by_row <- select_info$single$feature
-
-  xaxis_choices <- c(.featAssayXAxisNothingTitle)
-  if (length(column_covariates)) { # As it is possible for this plot to be _feasible_ but for no column data to exist.
-    xaxis_choices <- c(xaxis_choices, .featAssayXAxisColDataTitle)
-  }
-  xaxis_choices <- c(xaxis_choices, .featAssayXAxisFeatNameTitle)
-
-  list(
-    selectizeInput(.input_FUN(.featAssayYAxisFeatName),
-                   label="Y-axis feature:", choices=NULL, selected=NULL, multiple=FALSE),
-    selectInput(.input_FUN(.featAssayYAxisRowTable), label=NULL, choices=tab_by_row,
-                selected=iSEE:::.choose_link(x[[.featAssayYAxisRowTable]], tab_by_row)),
-    checkboxInput(.input_FUN(.featAssayYAxisFeatDynamic),
-                  label="Use dynamic feature selection for the y-axis",
-                  value=x[[.featAssayYAxisFeatDynamic]]),
-
-    selectInput(paste0(.getEncodedName(x), "_", .featAssayAssay), label=NULL,
-                choices="proportions", selected=x[[.featAssayAssay]]), # all_assays --> proportions
-    radioButtons(.input_FUN(.featAssayXAxis), label="X-axis:", inline=TRUE,
-                 choices=xaxis_choices, selected=x[[.featAssayXAxis]]),
-
-    .conditionalOnRadio(.input_FUN(.featAssayXAxis),
-                        .featAssayXAxisColDataTitle,
-                        selectInput(.input_FUN(.featAssayXAxisColData),
-                                    label="X-axis column data:",
-                                    choices=column_covariates, selected=x[[.featAssayXAxisColData]])),
-
-    .conditionalOnRadio(.input_FUN(.featAssayXAxis),
-                        .featAssayXAxisFeatNameTitle,
-                        selectizeInput(.input_FUN(.featAssayXAxisFeatName),
-                                       label="X-axis feature:", choices=NULL, selected=NULL, multiple=FALSE),
-                        selectInput(.input_FUN(.featAssayXAxisRowTable), label=NULL,
-                                    choices=tab_by_row, selected=x[[.featAssayXAxisRowTable]]),
-                        checkboxInput(.input_FUN(.featAssayXAxisFeatDynamic),
-                                      label="Use dynamic feature selection for the x-axis",
-                                      value=x[[.featAssayXAxisFeatDynamic]])
-    )
-  )
-})
-
-setMethod(".createObservers", "RawUsage", function(x, se, input, session, pObjects, rObjects) {
-  callNextMethod()
-
-  plot_name <- .getEncodedName(x)
-
-  .createProtectedParameterObservers(plot_name,
-                                     fields=c(.featAssayAssay, .featAssayXAxisColData),
-                                     input=input, pObjects=pObjects, rObjects=rObjects)
-})
-
-setMethod(".singleSelectionSlots", "RawUsage", function(x) {
-  c(callNextMethod(),
-    list(
-      list(
-        parameter=.featAssayXAxisFeatName,
-        source=.featAssayXAxisRowTable,
-        dimension="feature",
-        dynamic=.featAssayXAxisFeatDynamic,
-        use_mode=.featAssayXAxis,
-        use_value=.featAssayXAxisFeatNameTitle,
-        protected=TRUE
-      ),
-      list(
-        parameter=.featAssayYAxisFeatName,
-        source=.featAssayYAxisRowTable,
-        dimension="feature",
-        dynamic=.featAssayYAxisFeatDynamic,
-        use_mode=NA,
-        use_value=NA,
-        protected=TRUE
-      )
-    )
-  )
-})
-
-setMethod(".fullName", "RawUsage", function(x) "Raw usage plot") # Feature assay --> Raw usage
-
-setMethod(".panelColor", "RawUsage", function(x) "#808080") # #7BB854 --> #808080
-
-setMethod(".generateDotPlotData", "RawUsage", function(x, envir) {
-  data_cmds <- list()
-
-  ## Setting up the y-axis:
-  gene_selected_y <- x[[.featAssayYAxisFeatName]]
-  assay_choice <- x[[.featAssayAssay]]
-  plot_title <- gene_selected_y
-  y_lab <- sprintf("%s (%s)", gene_selected_y, assay_choice)
-  data_cmds[["y"]] <- sprintf(
-    "plot.data <- data.frame(Y=assay(se, %s)[%s, ], row.names=colnames(se))",
-    deparse(assay_choice), deparse(gene_selected_y)
-  )
-
-  ## Checking X axis choice:
-  x_choice <- x[[.featAssayXAxis]]
-
-  if (x_choice == .featAssayXAxisColDataTitle) { # colData column selected
-    x_lab <- x[[.featAssayXAxisColData]]
-    plot_title <- paste(plot_title, "vs", x_lab)
-    data_cmds[["x"]] <- sprintf("plot.data$X <- colData(se)[, %s];", deparse(x_lab))
-
-  } else if (x_choice == .featAssayXAxisFeatNameTitle) { # gene selected
-    gene_selected_x <- x[[.featAssayXAxisFeatName]]
-    plot_title <- paste(plot_title, "vs", gene_selected_x)
-    x_lab <- sprintf("%s (%s)", gene_selected_x, assay_choice)
-    data_cmds[["x"]] <- sprintf(
-      "plot.data$X <- assay(se, %s)[%s, ];",
-      deparse(assay_choice), deparse(gene_selected_x)
-    )
-
-  } else { # no x axis variable specified: show single violin
-    x_lab <- ''
-    data_cmds[["x"]] <- "plot.data$X <- factor(character(ncol(se)))"
-  }
-
-  data_cmds <- unlist(data_cmds)
-  .textEval(data_cmds, envir)
-
-  list(commands=data_cmds, labels=list(title=plot_title, X=x_lab, Y=y_lab))
-})
-
-setMethod(".definePanelTour", "RawUsage", function(x) {
-  collated <- character(0)
-
-  collated <- rbind(
-    c(paste0("#", .getEncodedName(x)), sprintf("The <font color=\"%s\">Feature assay plot</font> panel shows assay values for a particular feature (i.e., row) of a <code>SummarizedExperiment</code> object or one of its subclasses. Here, each point corresponds to a column (usually a sample) of the <code>SummarizedExperiment</code> object, and the y-axis represents the assay values.", .getPanelColor(x))),
-    .addTourStep(x, .dataParamBoxOpen, "The <i>Data parameters</i> box shows the available parameters that can be tweaked in this plot.<br/><br/><strong>Action:</strong> click on this box to open up available options."),
-    .addTourStep(x, .featAssayYAxisFeatName, "We can manually choose the feature of interest based on the row names of our <code>SummarizedExperiment</code> object.", is_selectize=TRUE),
-    .addTourStep(x, .featAssayYAxisRowTable, sprintf("Alternatively, we can link the choice of feature to a single selection from another panel such as a <font color=\"%s\">Row data table</font>.", .getPanelColor(RowDataTable())), is_selectize=TRUE),
-    .addTourStep(x, .featAssayYAxisFeatDynamic, "The upstream panel can even be chosen dynamically, where a single selection of a feature from any panel in the current instance can be used to specify the feature to be shown on the y-axis in this pane."),
-    .addTourStep(x, .featAssayXAxis, "A variety of choices are available for the variable to be plotted on the x-axis.<br/><br/><strong>Action:</strong> click on <i>Column data</i> to stratify values by a column metadata field."),
-    .addTourStep(x, .featAssayXAxisColData, "This exposes a new interface element that can be used that can be used to choose a covariate to show on the x-axis. Similar logic applies for plotting against the assay values of another feature with the <i>Feature name</i> choice.", is_selectize=TRUE)
-  )
-
-  rbind(
-    data.frame(element=collated[,1], intro=collated[,2], stringsAsFactors=FALSE),
-    callNextMethod()
-  )
-})
-
-```
-
-```{r}
-app <- iSEE(se, initial=list(
-    RawUsage(YAxisFeatureName="ENST00000486652.5",
-             XAxis= "Column data", 
-             XAxisColumnData = "condition")
-))
-```
-
-```{r, eval = FALSE}
-shiny::runApp(app)
-```
-
-# Visualize DRIMSeq proportions
-
-The `plotproportions` function only takes dmDSfit, dmDStest, dmSQTLfit or dmSQTLtest objects.
-In other words, we cannot run the `plotproportions` function out of the box without first calling
-the `dmPrecision` and `dmFit`, which is unnecessary and quite slow.
-
-As such, to leverage `plotproportions` I have started from the source code. 
-Its just to give you an idea of what DRIMSeq is doing. I here opted for the `barplot`, but in larger
-sample settings I guess we should move to violin/boxplots.
-
-```{r}
-library(reshape2)
-
-# DRIMSeq helper function
-colorb <- function(n){
-  clrs <- c("dodgerblue3", "maroon2",  "forestgreen", "darkorange1" ,
-    "blueviolet", "firebrick2", "deepskyblue",  "orchid2", "chartreuse3", 
-    "gold", "slateblue1", "tomato" , "blue", "magenta", "green3", "yellow", 
-    "purple3", "red" ,"darkslategray1", "lightpink1", "lightgreen", "khaki1", 
-    "plum3", "salmon")
-  nc <- length(clrs)
-  if(n > nc)
-    clrs <- rep(clrs, ceiling(n/nc))
-  clrs[1:n]
-}
-
-# Local copy (minor adaptations) of DRIMSeq's plotproportions function
-DRIMSeqPlotLocal <- function(RSE, group, gene, order_features = TRUE, order_samples = TRUE, group_colors = NULL, feature_colors = NULL){
+# Main function, relies on iSEE::FeatureAssayPlot
+ProportionsPlot <- function(se,
+                            transcript, 
+                            XAxisColumnData, 
+                            PanelWidth=6L){
   
-    txCounts <- assays(se)$counts
-    proportions <- assays(se)$proportions
+    totalCount <- .getTotalCount(countData = assays(se)$counts, 
+                                 tx2gene = rowData(se))
+    assays(se)$proportions <- assays(se)$counts/totalCount
     
-    ## subset to selected gene specified by user
-    tx2gene <- rowData(se)
-    tx2gene$gene_id <- unlist(tx2gene$gene_id)
+    # directly borrow FeatureAssayPlot from iSEE:
+    init <- iSEE::FeatureAssayPlot(YAxisFeatureName=transcript, 
+                                   Assay="proportions", 
+                                   XAxis= "Column data", 
+                                   XAxisColumnData = XAxisColumnData, 
+                                   PanelWidth=6L)
     
-    transcripts <- tx2gene[tx2gene$gene_id == gene,"tx_name"]
-    
-    txCounts <- txCounts[transcripts,]
-    proportions <- proportions[transcripts,]
-    
-    prop_samp <- data.frame(feature_id = rownames(proportions), proportions, 
-      stringsAsFactors = FALSE)
-    
-    ## Order transcipts by decreasing proportion (runs a few seconds)
-    if(order_features){
-        oo <- order(apply(aggregate(t(prop_samp[, -1]), 
-        by = list(group = group), median)[, -1], 2, max), decreasing = TRUE)
-        feature_levels <- rownames(prop_samp)[oo]  
-    }else{
-        feature_levels <- rownames(txCounts)
-    }
-    
-    ## Order samples by group
-    if(order_samples){
-        o <- order(group)
-        sample_levels <- colnames(txCounts)[o]
-    }else{
-        sample_levels <- colnames(txCounts)
-    }
-    
-    ## Melt prop_samp
-    prop_samp <- melt(prop_samp, id.vars = "feature_id", 
-        variable.name = "sample_id", value.name = "proportion", 
-        factorsAsStrings = FALSE)
-
-    prop_samp$feature_id <- factor(prop_samp$feature_id, levels = feature_levels)
-    prop_samp$group <- rep(group, each = nrow(txCounts))
-    prop_samp$sample_id <- factor(prop_samp$sample_id, levels = sample_levels)
-    
-    ## Prepare colors for groups
-    if(is.null(group_colors)){
-        group_colors <- colorb(nlevels(group))
-    }
-    names(group_colors) <- levels(group)
-
-    ## Prepare colors for features
-    if(is.null(feature_colors)){
-        feature_colors <- colorb(nrow(txCounts))
-    }
-    names(feature_colors) <- rownames(txCounts)
-
-    ggp <- ggplot() +
-        geom_bar(data = prop_samp, aes_string(x = "feature_id", y = "proportion", 
-        group = "sample_id", fill = "group"), 
-        stat = "identity", position = position_dodge(width = 0.9)) +
-        theme_bw() + 
-        theme(axis.text.x = element_text(angle = 90, vjust = 0.5), 
-        axis.text=element_text(size=16), 
-        axis.title = element_text(size=14, face="bold"), 
-        plot.title = element_text(size=16), 
-        legend.position = "right", 
-        legend.title = element_text(size = 14), 
-        legend.text = element_text(size = 14)) +
-        ggtitle(gene) +
-        scale_fill_manual(name = "Groups", values = group_colors, 
-        breaks = names(group_colors)) +
-        xlab("Features") +
-        ylab("Proportions")
-    # In this plot, we could add a summarystat and an indication of significance, i.e. a gene-level or transcript-level adjusted p-value 
-
-    return(ggp)
+    # !proportions assay only available in local function environment
+    app <- iSEE(se, initial=list(init))
+    return(app)
 }
+```
 
-ggp <- DRIMSeqPlotLocal(RSE = se, group = colData(se)$condition, gene = "ENSG00000162923.15")
-ggp
+```{r}
+app <- ProportionsPlot(se = se,
+                       transcript = "ENST00000486652.5", 
+                       XAxisColumnData = "condition", 
+                       PanelWidth=6L)
+```
+
+```{r, eval = FALSE}
+shiny::runApp(app)
 ```
 
 ## Session information
