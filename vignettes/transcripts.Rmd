@@ -193,6 +193,8 @@ app <- ProportionsPlot(se = se,
 shiny::runApp(app)
 ```
 
+![](https://github.com/jgilis/iSEEtranscripts/raw/master/man/figures/ProportionsPlot.png)
+
 ## Session information
 
 ```{r}
