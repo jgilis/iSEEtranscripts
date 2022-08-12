@@ -43,15 +43,15 @@ env:
 jobs:
   build-check:
     runs-on: ${{ matrix.config.os }}
-    name: ${{ matrix.config.os }} (${{ matrix.config.r }})
-    container: ${{ matrix.config.cont }}
+    container: ${{ matrix.config.image }}
+    name: ${{ matrix.config.os }} (${{ matrix.config.r }} - ${{ matrix.config.bioc }} - ${{ matrix.config.image }})
     ## Environment variables unique to this job.
 
     strategy:
       fail-fast: false
       matrix:
         config:
-          - { os: ubuntu-latest, r: 'release', image: 'bioconductor/bioconductor_docker:RELEASE_3_14' }
+          - { os: ubuntu-latest, r: 'release', image: 'bioconductor/bioconductor_docker:RELEASE_3_15' }
           - { os: ubuntu-latest, r: 'release', image: 'bioconductor/bioconductor_docker:devel' }
           - { os: macOS-latest, r: 'release', bioc: '3.15' }
           - { os: windows-latest, r: 'release', bioc: '3.15' }
